@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Welcome from './Welcome';
 import MainMenu from './MainMenu';
 import ProductsScreen from './ProductsScreen';
 import { ProductCategoryPage } from './ProductCategoryPage';
@@ -42,7 +43,13 @@ export default function App() {
         setS('cat');
       } else if (p === '/products') {
         setS('products');
-      } else if (p === '/'){ setS('welcome'); } else {
+      } else if (p === '/cart') {
+        setS('cart');
+      } else if (p === '/contact') {
+        setS('contact');
+      } else if (p === '/') {
+        setS('welcome');
+      } else {
         setS('menu');
       }
     };
@@ -55,7 +62,6 @@ export default function App() {
 
   return (
     <>
-      {/* لایه مستقل پس‌زمینه — همیشه روی کل سایت */}
       <div
         className="fixed inset-0 z-0 pointer-events-none"
         aria-hidden="true"
@@ -63,19 +69,17 @@ export default function App() {
         <FurnitureBackground />
       </div>
 
-      {/* لایه مستقل محتوای سایت */}
       <main
         className={`relative z-10 min-h-screen transition-all duration-700 ${
-          fade
-            ? 'opacity-0 scale-95'
-            : 'opacity-100 scale-100'
+          fade ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
         }`}
       >
-
+        {s === 'welcome' && (
+          <Welcome go={() => nav('menu')} />
+        )}
 
         {s === 'menu' && (
           <div className="relative min-h-screen flex items-center justify-center px-6">
-
             <div className="absolute top-6 left-6 sm:top-8 sm:left-10 z-20">
               <span className="text-xs sm:text-sm tracking-[.3em] text-neutral-900 font-serif uppercase">
                 Stela Design
@@ -89,12 +93,13 @@ export default function App() {
                     x,
                     x === 'products'
                       ? '/products'
-                      : '/'
+                      : x === 'cart'
+                      ? '/cart'
+                      : '/contact'
                   )
                 }
               />
             </div>
-
           </div>
         )}
 
@@ -111,32 +116,21 @@ export default function App() {
         {s === 'cat' && cat && (
           <ProductCategoryPage
             category={cat}
-            onBackToProducts={() =>
-              nav('products', '/products')
-            }
-            onBackToMenu={() =>
-              nav('menu')
-            }
+            onBackToProducts={() => nav('products', '/products')}
+            onBackToMenu={() => nav('menu')}
           />
         )}
 
         {s === 'cart' && (
           <CartScreen
-            onBackToProducts={() =>
-              nav('products', '/products')
-            }
-            onBackToMenu={() =>
-              nav('menu')
-            }
+            onBackToProducts={() => nav('products', '/products')}
+            onBackToMenu={() => nav('menu')}
           />
         )}
 
         {s === 'contact' && (
-          <ContactScreen
-            onBack={() => nav('menu')}
-          />
+          <ContactScreen onBack={() => nav('menu')} />
         )}
-
       </main>
     </>
   );
