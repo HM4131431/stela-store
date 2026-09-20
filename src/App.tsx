@@ -55,7 +55,7 @@ export default function App() {
 
   return (
     <div
-      className={`relative min-h-screen overflow-hidden bg-white transition-all duration-700 ${
+      className={`relative min-h-screen overflow-hidden bg-transparent transition-all duration-700 ${
         fade
           ? 'opacity-0 scale-95'
           : 'opacity-100 scale-100'
@@ -139,4 +139,4 @@ export default function App() {
       </div>
     </div>
   );
-}
+}git add src/App.tsx
