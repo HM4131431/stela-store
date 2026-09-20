@@ -15,7 +15,7 @@ const path = () => {
 };
 
 export default function App() {
-  const [s, setS] = useState<any>('menu');
+  const [s, setS] = useState<any>('welcome');
   const [cat, setCat] = useState<ProductCategory | null>(null);
   const [fade, setFade] = useState(false);
 
