@@ -42,7 +42,7 @@ export default function App() {
         setS('cat');
       } else if (p === '/products') {
         setS('products');
-      } else {
+      } else if (p === '/'){ setS('welcome'); } else {
         setS('menu');
       }
     };
