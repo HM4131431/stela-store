@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import Welcome from './Welcome';
 import MainMenu from './MainMenu';
 import ProductsScreen from './ProductsScreen';
-import ProductCategoryPage from './ProductCategoryPage';
+import { ProductCategoryPage } from './ProductCategoryPage';
 import CartScreen from './CartScreen';
 import ContactScreen from './ContactScreen';
 import FurnitureBackground from './FurnitureBackground';
@@ -16,7 +15,7 @@ const path = () => {
 };
 
 export default function App() {
-  const [s, setS] = useState<any>('welcome');
+  const [s, setS] = useState<any>('menu');
   const [cat, setCat] = useState<ProductCategory | null>(null);
   const [fade, setFade] = useState(false);
 
@@ -73,9 +72,6 @@ export default function App() {
         }`}
       >
 
-        {s === 'welcome' && (
-          <Welcome go={() => nav('menu')} />
-        )}
 
         {s === 'menu' && (
           <div className="relative min-h-screen flex items-center justify-center px-6">
