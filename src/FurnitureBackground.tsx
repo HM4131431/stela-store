@@ -138,7 +138,7 @@ const FurnitureBackground: React.FC = () => {
         inset: 0,
         overflow: "hidden",
         pointerEvents: "none",
-        zIndex: 0,
+        zIndex: 1,
 
         background:
           "radial-gradient(circle at 20% 20%, rgba(190,170,145,.10), transparent 28%)," +
