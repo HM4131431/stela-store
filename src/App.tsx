@@ -48,25 +48,30 @@ export default function App() {
       }
     };
 
+    h();
     addEventListener('popstate', h);
 
     return () => removeEventListener('popstate', h);
   }, []);
 
   return (
-    <div
-      className={`relative min-h-screen overflow-hidden bg-transparent transition-all duration-700 ${
-        fade
-          ? 'opacity-0 scale-95'
-          : 'opacity-100 scale-100'
-      }`}
-    >
+    <>
+      {/* لایه مستقل پس‌زمینه — همیشه روی کل سایت */}
+      <div
+        className="fixed inset-0 z-0 pointer-events-none"
+        aria-hidden="true"
+      >
+        <FurnitureBackground />
+      </div>
 
-      {/* پس‌زمینه مشترک تمام صفحات */}
-      <FurnitureBackground />
-
-      {/* محتوای سایت */}
-      <div className="relative z-10">
+      {/* لایه مستقل محتوای سایت */}
+      <main
+        className={`relative z-10 min-h-screen transition-all duration-700 ${
+          fade
+            ? 'opacity-0 scale-95'
+            : 'opacity-100 scale-100'
+        }`}
+      >
 
         {s === 'welcome' && (
           <Welcome go={() => nav('menu')} />
@@ -136,7 +141,7 @@ export default function App() {
           />
         )}
 
-      </div>
-    </div>
+      </main>
+    </>
   );
-}git add src/App.tsx
+}
