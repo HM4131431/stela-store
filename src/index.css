@@ -2,6 +2,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@layer base{ :root{font-family:'Cormorant Garamond',Georgia,serif} html,body,#root{min-height:100%;margin:0} body{background:#fff} }
+@layer base{ :root{font-family:'Cormorant Garamond',Georgia,serif} html,body,#root{min-height:100%;margin:0} body{background:transparent} }
 @keyframes fadeInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes furnitureFadeIn{from{opacity:0}to{opacity:1}}
