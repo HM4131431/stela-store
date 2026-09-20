@@ -75,7 +75,7 @@ export default function App() {
         }`}
       >
         {s === 'welcome' && (
-          <Welcome go={() => nav('menu')} />
+          <Welcome go={() => { setS('menu'); history.pushState({}, '', BASE + '/menu'); }} />
         )}
 
         {s === 'menu' && (
