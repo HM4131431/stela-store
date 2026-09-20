@@ -5,12 +5,14 @@ import ProductsScreen from './ProductsScreen';
 import { ProductCategoryPage } from './ProductCategoryPage';
 import CartScreen from './CartScreen';
 import ContactScreen from './ContactScreen';
+import AdminProducts from './AdminProducts';
 import FurnitureBackground from './FurnitureBackground';
 import type { ProductCategory } from './products';
 
 const BASE = '/stela-store';
 
 const path = () => {
+  if (new URLSearchParams(window.location.search).get('admin') === 'products') return '/admin/products';
   const p = window.location.pathname;
   return p.startsWith(BASE) ? p.slice(BASE.length) || '/' : p;
 };
@@ -45,6 +47,8 @@ export default function App() {
         setS('products');
       } else if (p === '/cart') {
         setS('cart');
+      } else if (p === '/admin/products') {
+        setS('admin');
       } else if (p === '/contact') {
         setS('contact');
       } else if (p === '/') {
@@ -127,6 +131,8 @@ export default function App() {
             onBackToMenu={() => nav('menu')}
           />
         )}
+
+        {s === 'admin' && <AdminProducts />}
 
         {s === 'contact' && (
           <ContactScreen onBack={() => nav('menu')} />
