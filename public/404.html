@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Redirecting…</title>
+    <script type="text/javascript">
+      const path = window.location.pathname.replace(/\/+$/, '') || '/';
+      const base = '/stela-store';
+      const redirect = path === base ? '/' : path.startsWith(base) ? path.slice(base.length) || '/' : path;
+      const target = `${base}${redirect === '/' ? '' : redirect}`;
+      sessionStorage.setItem('stela-page-redirect', target);
+      window.location.replace(target);
+    </script>
+  </head>
+  <body></body>
+</html>

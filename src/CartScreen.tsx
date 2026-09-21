@@ -11,6 +11,12 @@ type CartLine = {
   quantity: number;
 };
 
+type CustomerInfo = {
+  name: string;
+  phone: string;
+  address: string;
+};
+
 const parsePrice = (value: string) => {
   const digits = String(value || '')
     .replace(/تومان|Toman|tomans/gi, '')
@@ -25,6 +31,11 @@ const formatPrice = (value: number) => `${new Intl.NumberFormat('en-US').format(
 
 export default function CartScreen({ onBackToProducts, onBackToMenu }: { onBackToProducts: () => void; onBackToMenu: () => void }) {
   const [items, setItems] = useState<CartLine[]>([]);
+  const [customer, setCustomer] = useState<CustomerInfo>({
+    name: '',
+    phone: '',
+    address: '',
+  });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -64,8 +75,11 @@ export default function CartScreen({ onBackToProducts, onBackToMenu }: { onBackT
   const submitToGateway = () => {
     if (!items.length) return;
 
+    if (!customer.name.trim() || !customer.phone.trim() || !customer.address.trim()) return;
+
     const payload = {
       createdAt: new Date().toISOString(),
+      customer,
       items: items.map((item) => ({
         id: item.productId,
         name: item.name,
@@ -77,7 +91,8 @@ export default function CartScreen({ onBackToProducts, onBackToMenu }: { onBackT
     };
 
     if (typeof window !== 'undefined') {
-      const gateway = new URL(`${window.location.origin}${'/stela-store'}/payment`);
+      const basePath = window.location.pathname.includes('/stela-store') ? '/stela-store' : '';
+      const gateway = new URL(`${window.location.origin}${basePath}/payment`);
       gateway.searchParams.set('order', JSON.stringify(payload));
       gateway.searchParams.set('amount', String(totalPrice));
       window.localStorage.setItem('stela-last-order', JSON.stringify(payload));
@@ -114,35 +129,74 @@ export default function CartScreen({ onBackToProducts, onBackToMenu }: { onBackT
           </div>
         ) : (
           <div className="grid gap-8 lg:grid-cols-[1.4fr_0.6fr]">
-            <div className="space-y-4">
-              {items.map((item) => (
-                <div key={item.productId} className="flex gap-4 rounded-[26px] border border-white/50 bg-[linear-gradient(135deg,rgba(255,255,255,0.34),rgba(255,255,255,0.14))] p-4 shadow-[0_22px_45px_rgba(93,77,138,0.12)]">
-                  <img src={item.image} alt={item.name} className="h-24 w-24 rounded-2xl object-cover" />
+            <div className="space-y-6">
+              <div className="rounded-[26px] border border-white/50 bg-[linear-gradient(135deg,rgba(255,255,255,0.34),rgba(255,255,255,0.14))] p-5 shadow-[0_22px_45px_rgba(93,77,138,0.12)]">
+                <h2 className="mb-4 font-serif text-2xl text-neutral-900">اطلاعات مشتری</h2>
 
-                  <div className="flex flex-1 flex-col justify-between gap-3 sm:flex-row">
-                    <div className="min-w-0">
-                      <h2 className="font-medium text-neutral-900">{item.name}</h2>
-                      <p className="mt-1 text-sm text-neutral-700">{formatPrice(parsePrice(item.price))}</p>
-                    </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="md:col-span-2">
+                    <span className="mb-2 block text-sm text-neutral-700">نام و نام خانوادگی</span>
+                    <input
+                      value={customer.name}
+                      onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
+                      className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-neutral-900"
+                      placeholder="مثلاً محمد رضایی"
+                    />
+                  </label>
 
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2 rounded-full border border-white/60 bg-white/35 px-2 py-1">
-                        <button type="button" onClick={() => changeQuantity(item.productId, -1)} className="rounded-full p-1 text-neutral-800 hover:bg-white/40"><Minus size={15} /></button>
-                        <span className="min-w-6 text-center text-sm text-neutral-900">{item.quantity}</span>
-                        <button type="button" onClick={() => changeQuantity(item.productId, 1)} className="rounded-full p-1 text-neutral-800 hover:bg-white/40"><Plus size={15} /></button>
+                  <label className="md:col-span-2">
+                    <span className="mb-2 block text-sm text-neutral-700">شماره تماس</span>
+                    <input
+                      value={customer.phone}
+                      onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
+                      className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-neutral-900"
+                      placeholder="مثلاً 09123456789"
+                    />
+                  </label>
+
+                  <label className="md:col-span-2">
+                    <span className="mb-2 block text-sm text-neutral-700">آدرس</span>
+                    <textarea
+                      rows={4}
+                      value={customer.address}
+                      onChange={(e) => setCustomer({ ...customer, address: e.target.value })}
+                      className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-neutral-900"
+                      placeholder="آدرس کامل، شهر، خیابان و پلاک"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {items.map((item) => (
+                  <div key={item.productId} className="flex gap-4 rounded-[26px] border border-white/50 bg-[linear-gradient(135deg,rgba(255,255,255,0.34),rgba(255,255,255,0.14))] p-4 shadow-[0_22px_45px_rgba(93,77,138,0.12)]">
+                    <img src={item.image} alt={item.name} className="h-24 w-24 rounded-2xl object-cover" />
+
+                    <div className="flex flex-1 flex-col justify-between gap-3 sm:flex-row">
+                      <div className="min-w-0">
+                        <h2 className="font-medium text-neutral-900">{item.name}</h2>
+                        <p className="mt-1 text-sm text-neutral-700">{formatPrice(parsePrice(item.price))}</p>
                       </div>
 
-                      <button type="button" onClick={() => removeItem(item.productId)} className="rounded-full p-2 text-neutral-700 transition hover:bg-red-500/10 hover:text-red-600" aria-label="حذف محصول">
-                        <Trash2 size={16} />
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 rounded-full border border-white/60 bg-white/35 px-2 py-1">
+                          <button type="button" onClick={() => changeQuantity(item.productId, -1)} className="rounded-full p-1 text-neutral-800 hover:bg-white/40"><Minus size={15} /></button>
+                          <span className="min-w-6 text-center text-sm text-neutral-900">{item.quantity}</span>
+                          <button type="button" onClick={() => changeQuantity(item.productId, 1)} className="rounded-full p-1 text-neutral-800 hover:bg-white/40"><Plus size={15} /></button>
+                        </div>
+
+                        <button type="button" onClick={() => removeItem(item.productId)} className="rounded-full p-2 text-neutral-700 transition hover:bg-red-500/10 hover:text-red-600" aria-label="حذف محصول">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
             <aside className="rounded-[26px] border border-white/50 bg-[linear-gradient(135deg,rgba(255,255,255,0.34),rgba(255,255,255,0.14))] p-5 shadow-[0_22px_45px_rgba(93,77,138,0.12)]">
-              <h2 className="mb-4 font-serif text-2xl text-neutral-900">جمع سفارش</h2>
+              <h2 className="mb-4 font-serif text-2xl text-neutral-900">خلاصه سفارش</h2>
 
               <div className="space-y-3 text-sm text-neutral-700">
                 <div className="flex justify-between">
@@ -158,9 +212,10 @@ export default function CartScreen({ onBackToProducts, onBackToMenu }: { onBackT
               <button
                 type="button"
                 onClick={submitToGateway}
-                className="mt-6 w-full rounded-xl bg-neutral-900 px-5 py-3 text-base font-medium text-white transition hover:bg-neutral-700"
+                disabled={!items.length || !customer.name.trim() || !customer.phone.trim() || !customer.address.trim()}
+                className="mt-6 w-full rounded-xl bg-neutral-900 px-5 py-3 text-base font-medium text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:bg-neutral-400"
               >
-                ثبت سفارش و پرداخت
+                پرداخت
               </button>
             </aside>
           </div>

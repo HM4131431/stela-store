@@ -10,6 +10,11 @@ type PaymentItem = {
 
 type PaymentOrder = {
   createdAt: string;
+  customer: {
+    name: string;
+    phone: string;
+    address: string;
+  };
   items: PaymentItem[];
   total: number;
   totalItems: number;
@@ -106,6 +111,26 @@ export default function PaymentGatewayScreen({
             پرداخت امن
           </div>
         </div>
+
+        {order?.customer && (
+          <div className="mb-6 rounded-[28px] border border-white/50 bg-white/30 p-5">
+            <h2 className="mb-3 font-serif text-2xl text-neutral-900">اطلاعات سفارش‌دهنده</h2>
+            <div className="grid gap-3 text-sm text-neutral-700 md:grid-cols-3">
+              <div>
+                <span className="block text-xs uppercase tracking-[0.2em] text-neutral-500">نام</span>
+                <strong className="mt-1 block text-neutral-900">{order.customer.name}</strong>
+              </div>
+              <div>
+                <span className="block text-xs uppercase tracking-[0.2em] text-neutral-500">شماره تماس</span>
+                <strong className="mt-1 block text-neutral-900">{order.customer.phone}</strong>
+              </div>
+              <div>
+                <span className="block text-xs uppercase tracking-[0.2em] text-neutral-500">آدرس</span>
+                <strong className="mt-1 block text-neutral-900">{order.customer.address}</strong>
+              </div>
+            </div>
+          </div>
+        )}
 
         {!order ? (
           <div className="rounded-[28px] border border-dashed border-neutral-300 bg-white/40 p-8 text-center text-neutral-700">

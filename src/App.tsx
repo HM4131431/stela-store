@@ -10,14 +10,29 @@ import FurnitureBackground from './FurnitureBackground';
 import PaymentGatewayScreen from './PaymentGatewayScreen';
 import type { ProductCategory } from './products';
 
-const BASE = import.meta.env.PROD ? '' : '/stela-store';
+const BASE = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '') || '/';
 const ADMIN_SECRET = 'stela-admin-2026';
 const ADMIN_PASSWORD = '980107';
+
+const joinBasePath = (p = '/') => {
+  const clean = p.startsWith('/') ? p : `/${p}`;
+  if (BASE === '/') return clean;
+  return `${BASE}${clean === '/' ? '' : clean}`;
+};
 
 const path = () => {
   if (new URLSearchParams(window.location.search).get('admin') === ADMIN_SECRET) return '/admin/products';
   const p = window.location.pathname;
-  return p.startsWith(BASE) ? p.slice(BASE.length) || '/' : p;
+  if (BASE !== '/' && p.startsWith(BASE)) {
+    return p.slice(BASE.length) || '/';
+  }
+  return p;
+};
+
+const getRedirectPath = () => {
+  const redirect = new URLSearchParams(window.location.search).get('redirect');
+  if (!redirect) return null;
+  return redirect.startsWith('/') ? redirect : `/${redirect}`;
 };
 
 export default function App() {
@@ -31,14 +46,19 @@ export default function App() {
     setFade(true);
 
     setTimeout(() => {
-      const target = p.startsWith(BASE) ? p : BASE + p;
-      history.pushState({}, '', target);
+      history.pushState({}, '', joinBasePath(p));
       setS(next);
       setFade(false);
     }, 600);
   };
 
   useEffect(() => {
+    const redirect = getRedirectPath();
+    if (redirect) {
+      const nextUrl = `${BASE}${redirect === '/' ? '' : redirect}`;
+      history.replaceState({}, '', nextUrl);
+    }
+
     const h = () => {
       const p = path();
       const isAdminRequest = new URLSearchParams(window.location.search).get('admin') === ADMIN_SECRET;
@@ -135,7 +155,7 @@ export default function App() {
             }
 
             return (
-              <Welcome go={() => { setS('menu'); history.pushState({}, '', BASE + '/menu'); }} />
+              <Welcome go={() => { setS('menu'); history.pushState({}, '', joinBasePath('/menu')); }} />
             );
           })()
         )}
@@ -208,7 +228,7 @@ export default function App() {
                       setAdminPassword('');
                       setAdminUnlocked(false);
                       setS('welcome');
-                      history.pushState({}, '', BASE + '/');
+                      history.pushState({}, '', joinBasePath('/'));
                     }}
                     className="rounded-xl bg-neutral-900 px-5 py-3 text-base font-medium text-white transition hover:bg-neutral-700"
                   >
