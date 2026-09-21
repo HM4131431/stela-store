@@ -7,6 +7,7 @@ import {
   PlusCircle,
   Sparkles,
   Trash2,
+  ShoppingBag,
 } from 'lucide-react';
 import {
   CATEGORIES,
@@ -26,6 +27,20 @@ type ProductDraft = {
   specs: string;
   available: boolean;
   featured: boolean;
+};
+
+type CustomerOrder = {
+  id: string;
+  createdAt: string;
+  total: number;
+  totalItems: number;
+  status: 'paid' | 'pending';
+  items: Array<{
+    id: string;
+    name: string;
+    quantity: number;
+    price: number;
+  }>;
 };
 
 const emptyDraft: ProductDraft = {
@@ -63,15 +78,29 @@ const formatPrice = (value: string) => {
   return normalizePriceText(value);
 };
 
+const getStoredOrders = (): CustomerOrder[] => {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const raw = window.localStorage.getItem('stela-orders');
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 export default function AdminProducts() {
   const [draft, setDraft] = useState<ProductDraft>(emptyDraft);
   const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [error, setError] = useState('');
-  const [tab, setTab] = useState<'add' | 'delete'>('add');
+  const [tab, setTab] = useState<'add' | 'delete' | 'orders'>('add');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setProducts(getStoredProducts());
+    setOrders(getStoredOrders());
   }, []);
 
   const totalValue = useMemo(() => {
@@ -185,19 +214,25 @@ export default function AdminProducts() {
           </div>
         </div>
 
-        <div className="mb-8 grid gap-4 md:grid-cols-2">
+        <div className="mb-8 grid gap-4 md:grid-cols-3">
           {[
             {
               id: 'add' as const,
-              label: 'افزودن پست',
-              description: 'ثبت پست جدید با عکس، قیمت و توضیحات',
+              label: 'ثبت محصول',
+              description: 'ثبت محصول جدید با عکس، قیمت و توضیحات',
               icon: <PlusCircle size={22} />,
             },
             {
               id: 'delete' as const,
-              label: 'حذف پست',
-              description: 'دیدن لیست پست‌ها و حذف هر مورد',
+              label: 'حذف محصول',
+              description: 'دیدن لیست محصولات و حذف هر مورد',
               icon: <Trash2 size={22} />,
+            },
+            {
+              id: 'orders' as const,
+              label: 'سفارش‌های مشتری',
+              description: 'مشاهده سفارش‌های ثبت‌شده توسط مشتریان',
+              icon: <ShoppingBag size={22} />,
             },
           ].map((item) => (
             <button
@@ -211,9 +246,11 @@ export default function AdminProducts() {
               }`}
             >
               <div className="mb-3 flex items-center justify-between">
-                <span className={`flex h-11 w-11 items-center justify-center rounded-full ${
-                  tab === item.id ? 'bg-white/10 text-white' : 'bg-neutral-100 text-neutral-900'
-                }`}>
+                <span
+                  className={`flex h-11 w-11 items-center justify-center rounded-full ${
+                    tab === item.id ? 'bg-white/10 text-white' : 'bg-neutral-100 text-neutral-900'
+                  }`}
+                >
                   {item.icon}
                 </span>
               </div>
@@ -231,7 +268,7 @@ export default function AdminProducts() {
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white">
                 <PlusCircle size={18} />
               </div>
-              <h2 className="font-serif text-2xl text-neutral-900">افزودن پست جدید</h2>
+              <h2 className="font-serif text-2xl text-neutral-900">ثبت محصول جدید</h2>
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
@@ -361,16 +398,16 @@ export default function AdminProducts() {
               className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-base font-medium text-white transition hover:bg-neutral-700"
             >
               <PlusCircle size={18} />
-              افزودن پست
+              ثبت محصول
             </button>
           </section>
-        ) : (
+        ) : tab === 'delete' ? (
           <aside className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-900">
                 <ImageIcon size={18} />
               </div>
-              <h2 className="font-serif text-2xl text-neutral-900">حذف پست‌ها</h2>
+              <h2 className="font-serif text-2xl text-neutral-900">حذف محصول‌ها</h2>
             </div>
 
             <div className="space-y-4">
@@ -402,7 +439,7 @@ export default function AdminProducts() {
                         <button
                           onClick={() => removeProduct(product.id)}
                           className="rounded-full p-2 text-neutral-500 transition hover:bg-white hover:text-red-600"
-                          title="حذف پست"
+                          title="حذف محصول"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -428,6 +465,54 @@ export default function AdminProducts() {
               )}
             </div>
           </aside>
+        ) : (
+          <section className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white">
+                <ShoppingBag size={18} />
+              </div>
+              <h2 className="font-serif text-2xl text-neutral-900">سفارش‌های مشتری‌ها</h2>
+            </div>
+
+            <div className="space-y-4">
+              {orders.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-8 text-center text-sm text-neutral-500">
+                  هنوز سفارشی ثبت نشده است.
+                </div>
+              ) : (
+                orders.map((order) => (
+                  <div key={order.id} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                    <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="font-medium text-neutral-900">سفارش #{order.id.replace('order-', '')}</p>
+                        <p className="text-xs text-neutral-500">
+                          {new Date(order.createdAt).toLocaleString('fa-IR')}
+                        </p>
+                      </div>
+
+                      <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-medium text-emerald-700">
+                        {order.status === 'paid' ? 'تأیید شده' : 'در انتظار'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      {order.items.map((item) => (
+                        <div key={`${order.id}-${item.id}`} className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 text-sm text-neutral-700">
+                          <span>{item.name}</span>
+                          <span>{item.quantity} × {new Intl.NumberFormat('fa-IR').format(item.price)} </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between border-t border-neutral-200 pt-3 text-sm">
+                      <span className="text-neutral-500">تعداد اقلام: {order.totalItems}</span>
+                      <span className="font-medium text-neutral-900">جمع: {new Intl.NumberFormat('fa-IR').format(order.total)} تومان</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
         )}
       </div>
     </div>

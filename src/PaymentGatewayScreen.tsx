@@ -59,6 +59,18 @@ export default function PaymentGatewayScreen({
     if (!order) return;
 
     if (typeof window !== 'undefined') {
+      const savedOrders = JSON.parse(window.localStorage.getItem('stela-orders') || '[]');
+      const nextOrders = Array.isArray(savedOrders) ? savedOrders : [];
+      const timestamp = new Date().toISOString();
+
+      nextOrders.unshift({
+        ...order,
+        id: `order-${timestamp}`,
+        status: 'paid',
+        createdAt: timestamp,
+      });
+
+      window.localStorage.setItem('stela-orders', JSON.stringify(nextOrders));
       window.localStorage.setItem('stela-last-order', JSON.stringify(order));
       window.localStorage.removeItem('stela-cart');
     }
