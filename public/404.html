@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Redirecting…</title>
     <script type="text/javascript">
-      const path = window.location.pathname.replace(/\/+$/, '') || '/';
-      const base = '/stela-store';
-      const redirect = path === base ? '/' : path.startsWith(base) ? path.slice(base.length) || '/' : path;
-      const target = `${base}${redirect === '/' ? '' : redirect}`;
-      sessionStorage.setItem('stela-page-redirect', target);
-      window.location.replace(target);
+      const rawPath = window.location.pathname.replace(/\/+$/, '') || '/';
+      const redirect = rawPath === '/' ? '/' : rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
+      sessionStorage.setItem('stela-page-redirect', redirect);
+      window.location.replace(redirect);
     </script>
   </head>
   <body></body>

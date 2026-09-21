@@ -10,7 +10,7 @@ import FurnitureBackground from './FurnitureBackground';
 import PaymentGatewayScreen from './PaymentGatewayScreen';
 import type { ProductCategory } from './products';
 
-const BASE = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '') || '/';
+const BASE = '/';
 const ADMIN_SECRET = 'stela-admin-2026';
 const ADMIN_PASSWORD = '980107';
 
@@ -23,10 +23,8 @@ const joinBasePath = (p = '/') => {
 const path = () => {
   if (new URLSearchParams(window.location.search).get('admin') === ADMIN_SECRET) return '/admin/products';
   const p = window.location.pathname;
-  if (BASE !== '/' && p.startsWith(BASE)) {
-    return p.slice(BASE.length) || '/';
-  }
-  return p;
+  if (BASE === '/') return p || '/';
+  return p.startsWith(BASE) ? p.slice(BASE.length) || '/' : p;
 };
 
 const getRedirectPath = () => {
