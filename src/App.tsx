@@ -12,6 +12,7 @@ import type { ProductCategory } from './products';
 
 const BASE = import.meta.env.PROD ? '' : '/stela-store';
 const ADMIN_SECRET = 'stela-admin-2026';
+const ADMIN_PASSWORD = '980107';
 
 const path = () => {
   if (new URLSearchParams(window.location.search).get('admin') === ADMIN_SECRET) return '/admin/products';
@@ -23,6 +24,8 @@ export default function App() {
   const [s, setS] = useState<any>('welcome');
   const [cat, setCat] = useState<ProductCategory | null>(null);
   const [fade, setFade] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminUnlocked, setAdminUnlocked] = useState(false);
 
   const nav = (next: any, p = '/') => {
     setFade(true);
@@ -38,6 +41,13 @@ export default function App() {
   useEffect(() => {
     const h = () => {
       const p = path();
+      const isAdminRequest = new URLSearchParams(window.location.search).get('admin') === ADMIN_SECRET;
+
+      if (p === '/admin/products' && isAdminRequest) {
+        setAdminUnlocked(adminPassword === ADMIN_PASSWORD || localStorage.getItem('stela-admin-pass') === ADMIN_PASSWORD);
+        setS(adminPassword === ADMIN_PASSWORD || localStorage.getItem('stela-admin-pass') === ADMIN_PASSWORD ? 'admin' : 'welcome');
+        return;
+      }
 
       const m = p.match(
         /^\/products\/(tables|shelves|stands|clothes-racks)$/
@@ -52,8 +62,6 @@ export default function App() {
         setS('cart');
       } else if (p === '/payment') {
         setS('payment');
-      } else if (p === '/admin/products' && new URLSearchParams(window.location.search).get('admin') === ADMIN_SECRET) {
-        setS('admin');
       } else if (p === '/contact') {
         setS('contact');
       } else if (p === '/') {
@@ -67,7 +75,20 @@ export default function App() {
     addEventListener('popstate', h);
 
     return () => removeEventListener('popstate', h);
-  }, []);
+  }, [adminPassword]);
+
+  const submitAdminPassword = () => {
+    if (adminPassword === ADMIN_PASSWORD) {
+      localStorage.setItem('stela-admin-pass', ADMIN_PASSWORD);
+      setAdminUnlocked(true);
+      setS('admin');
+      return;
+    }
+
+    setAdminPassword('');
+    setAdminUnlocked(false);
+    setS('welcome');
+  };
 
   return (
     <>
@@ -84,7 +105,39 @@ export default function App() {
         }`}
       >
         {s === 'welcome' && (
-          <Welcome go={() => { setS('menu'); history.pushState({}, '', BASE + '/menu'); }} />
+          (() => {
+            const isAdminRoute = new URLSearchParams(window.location.search).get('admin') === ADMIN_SECRET;
+
+            if (isAdminRoute) {
+              return (
+                <div className="flex min-h-screen items-center justify-center px-6">
+                  <div className="rounded-[32px] border border-white/40 bg-white/30 p-8 text-center shadow-[0_25px_80px_rgba(93,77,138,0.12)] backdrop-blur-lg">
+                    <p className="mb-2 text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+                      admin access
+                    </p>
+                    <h1 className="mb-6 font-serif text-3xl text-neutral-900">ورود به پنل مدیریت</h1>
+                    <input
+                      type="password"
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      placeholder="رمز عبور را وارد کنید"
+                      className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-right outline-none transition focus:border-neutral-900"
+                    />
+                    <button
+                      onClick={submitAdminPassword}
+                      className="mt-5 w-full rounded-xl bg-neutral-900 px-5 py-3 text-base font-medium text-white transition hover:bg-neutral-700"
+                    >
+                      ورود
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <Welcome go={() => { setS('menu'); history.pushState({}, '', BASE + '/menu'); }} />
+            );
+          })()
         )}
 
         {s === 'menu' && (
@@ -137,7 +190,35 @@ export default function App() {
           />
         )}
 
-        {s === 'admin' && <AdminProducts />}
+        {s === 'admin' && (
+          (() => {
+            if (adminUnlocked || localStorage.getItem('stela-admin-pass') === ADMIN_PASSWORD) {
+              return <AdminProducts />;
+            }
+
+            return (
+              <div className="flex min-h-screen items-center justify-center px-6">
+                <div className="rounded-[32px] border border-white/40 bg-white/30 p-8 text-center shadow-[0_25px_80px_rgba(93,77,138,0.12)] backdrop-blur-lg">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+                    access denied
+                  </p>
+                  <h1 className="mb-4 font-serif text-3xl text-neutral-900">دسترسی محدود</h1>
+                  <button
+                    onClick={() => {
+                      setAdminPassword('');
+                      setAdminUnlocked(false);
+                      setS('welcome');
+                      history.pushState({}, '', BASE + '/');
+                    }}
+                    className="rounded-xl bg-neutral-900 px-5 py-3 text-base font-medium text-white transition hover:bg-neutral-700"
+                  >
+                    بازگشت به صفحه اصلی
+                  </button>
+                </div>
+              </div>
+            );
+          })()
+        )}
 
         {s === 'contact' && (
           <ContactScreen onBack={() => nav('menu')} />
