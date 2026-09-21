@@ -11,9 +11,10 @@ import PaymentGatewayScreen from './PaymentGatewayScreen';
 import type { ProductCategory } from './products';
 
 const BASE = import.meta.env.PROD ? '' : '/stela-store';
+const ADMIN_SECRET = 'stela-admin-2026';
 
 const path = () => {
-  if (new URLSearchParams(window.location.search).get('admin') === 'products') return '/admin/products';
+  if (new URLSearchParams(window.location.search).get('admin') === ADMIN_SECRET) return '/admin/products';
   const p = window.location.pathname;
   return p.startsWith(BASE) ? p.slice(BASE.length) || '/' : p;
 };
@@ -51,7 +52,7 @@ export default function App() {
         setS('cart');
       } else if (p === '/payment') {
         setS('payment');
-      } else if (p === '/admin/products') {
+      } else if (p === '/admin/products' && new URLSearchParams(window.location.search).get('admin') === ADMIN_SECRET) {
         setS('admin');
       } else if (p === '/contact') {
         setS('contact');
@@ -103,9 +104,7 @@ export default function App() {
                       ? '/products'
                       : x === 'cart'
                       ? '/cart'
-                      : x === 'contact'
-                      ? '/contact'
-                      : '/?admin=products'
+                      : '/contact'
                   )
                 }
               />

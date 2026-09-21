@@ -1,23 +1,22 @@
-import { Phone, ShieldCheck, ShoppingBag, ShoppingCart } from 'lucide-react';
+import { Phone, ShoppingBag, ShoppingCart } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 type MenuOption = {
   icon: typeof ShoppingBag;
   label: string;
-  screen: 'products' | 'cart' | 'contact' | 'admin';
+  screen: 'products' | 'cart' | 'contact';
 };
 
 const OPTIONS: MenuOption[] = [
   { icon: ShoppingBag, label: 'محصولات', screen: 'products' },
   { icon: ShoppingCart, label: 'سبد خرید', screen: 'cart' },
   { icon: Phone, label: 'تماس با ما', screen: 'contact' },
-  { icon: ShieldCheck, label: 'پنل مدیریت', screen: 'admin' },
 ];
 
 export default function MainMenu({
   onNavigate,
 }: {
-  onNavigate: (s: 'products' | 'cart' | 'contact' | 'admin') => void;
+  onNavigate: (s: 'products' | 'cart' | 'contact') => void;
 }) {
   const [pointer, setPointer] = useState({ x: 0, y: 0 });
 
