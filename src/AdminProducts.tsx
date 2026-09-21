@@ -67,6 +67,7 @@ export default function AdminProducts() {
   const [draft, setDraft] = useState<ProductDraft>(emptyDraft);
   const [products, setProducts] = useState<Product[]>([]);
   const [error, setError] = useState('');
+  const [tab, setTab] = useState<'add' | 'delete'>('add');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -143,7 +144,7 @@ export default function AdminProducts() {
               dashboard
             </p>
             <h1 className="font-serif text-3xl text-neutral-900 sm:text-4xl">
-              پنل مدیریت محصولات
+              پنل مدیریت پست‌ها
             </h1>
           </div>
 
@@ -184,13 +185,53 @@ export default function AdminProducts() {
           </div>
         </div>
 
-        <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="mb-8 grid gap-4 md:grid-cols-2">
+          {[
+            {
+              id: 'add' as const,
+              label: 'افزودن پست',
+              description: 'ثبت پست جدید با عکس، قیمت و توضیحات',
+              icon: <PlusCircle size={22} />,
+            },
+            {
+              id: 'delete' as const,
+              label: 'حذف پست',
+              description: 'دیدن لیست پست‌ها و حذف هر مورد',
+              icon: <Trash2 size={22} />,
+            },
+          ].map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setTab(item.id)}
+              className={`rounded-3xl border p-5 text-right shadow-sm transition ${
+                tab === item.id
+                  ? 'border-neutral-900 bg-neutral-900 text-white'
+                  : 'border-neutral-200 bg-white text-neutral-900 hover:border-neutral-900'
+              }`}
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <span className={`flex h-11 w-11 items-center justify-center rounded-full ${
+                  tab === item.id ? 'bg-white/10 text-white' : 'bg-neutral-100 text-neutral-900'
+                }`}>
+                  {item.icon}
+                </span>
+              </div>
+              <h2 className="font-serif text-2xl">{item.label}</h2>
+              <p className={`mt-2 text-sm ${tab === item.id ? 'text-neutral-200' : 'text-neutral-500'}`}>
+                {item.description}
+              </p>
+            </button>
+          ))}
+        </div>
+
+        {tab === 'add' ? (
           <section className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-6 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white">
                 <PlusCircle size={18} />
               </div>
-              <h2 className="font-serif text-2xl text-neutral-900">افزودن محصول جدید</h2>
+              <h2 className="font-serif text-2xl text-neutral-900">افزودن پست جدید</h2>
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
@@ -320,16 +361,16 @@ export default function AdminProducts() {
               className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-base font-medium text-white transition hover:bg-neutral-700"
             >
               <PlusCircle size={18} />
-              انتشار محصول
+              افزودن پست
             </button>
           </section>
-
+        ) : (
           <aside className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-900">
                 <ImageIcon size={18} />
               </div>
-              <h2 className="font-serif text-2xl text-neutral-900">محصولات منتشرشده</h2>
+              <h2 className="font-serif text-2xl text-neutral-900">حذف پست‌ها</h2>
             </div>
 
             <div className="space-y-4">
@@ -361,7 +402,7 @@ export default function AdminProducts() {
                         <button
                           onClick={() => removeProduct(product.id)}
                           className="rounded-full p-2 text-neutral-500 transition hover:bg-white hover:text-red-600"
-                          title="حذف محصول"
+                          title="حذف پست"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -387,7 +428,7 @@ export default function AdminProducts() {
               )}
             </div>
           </aside>
-        </div>
+        )}
       </div>
     </div>
   );

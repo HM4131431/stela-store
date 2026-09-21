@@ -103,7 +103,9 @@ export default function App() {
                       ? '/products'
                       : x === 'cart'
                       ? '/cart'
-                      : '/contact'
+                      : x === 'contact'
+                      ? '/contact'
+                      : '/?admin=products'
                   )
                 }
               />
