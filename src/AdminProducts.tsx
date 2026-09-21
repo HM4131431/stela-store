@@ -1,125 +1,392 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import {
+  BadgeDollarSign,
+  ImageIcon,
+  Layers3,
+  Package,
+  PlusCircle,
+  Sparkles,
+  Trash2,
+} from 'lucide-react';
+import {
+  CATEGORIES,
+  getStoredProducts,
+  removeCommentsForProduct,
+  saveProducts,
+  type Product,
+  type ProductCategory,
+} from './products';
+
+type ProductDraft = {
+  name: string;
+  category: ProductCategory;
+  image: string;
+  price: string;
+  description: string;
+  specs: string;
+  available: boolean;
+  featured: boolean;
+};
+
+const emptyDraft: ProductDraft = {
+  name: '',
+  category: 'tables',
+  image: '',
+  price: '',
+  description: '',
+  specs: '',
+  available: true,
+  featured: false,
+};
+
+const normalizePriceText = (value: string) => {
+  const clean = String(value)
+    .replace(/تومان|Toman|tomans/gi, '')
+    .replace(/٬|,/g, '')
+    .trim();
+
+  if (!clean) return 'قیمت وارد نشده';
+
+  const digitsOnly = clean.replace(/[۰-۹]/g, (char) =>
+    '۰۱۲۳۴۵۶۷۸۹'.indexOf(char).toString(),
+  ).replace(/\D/g, '');
+
+  if (!digitsOnly) return clean || 'قیمت وارد نشده';
+
+  const numeric = Number(digitsOnly);
+  if (!Number.isFinite(numeric) || numeric <= 0) return clean || 'قیمت وارد نشده';
+
+  return `${new Intl.NumberFormat('en-US').format(numeric)} تومان`;
+};
+
+const formatPrice = (value: string) => {
+  return normalizePriceText(value);
+};
 
 export default function AdminProducts() {
-  const [image, setImage] = useState('');
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState('میز');
-  const [price, setPrice] = useState('');
-  const [specs, setSpecs] = useState('');
-  const [description, setDescription] = useState('');
+  const [draft, setDraft] = useState<ProductDraft>(emptyDraft);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const publish = () => {
-    const product = {
-      id: Date.now(),
-      image,
-      name,
-      category,
-      price,
-      specs,
-      description,
+  useEffect(() => {
+    setProducts(getStoredProducts());
+  }, []);
+
+  const totalValue = useMemo(() => {
+    return products.reduce((sum, product) => {
+      const value = Number(String(product.price).replace(/\D/g, ''));
+      return sum + (Number.isFinite(value) ? value : 0);
+    }, 0);
+  }, [products]);
+
+  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      setDraft((current) => ({ ...current, image: result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const addProduct = () => {
+    if (!draft.name.trim() || !draft.image.trim() || !draft.price.trim()) {
+      setError('نام محصول، عکس و قیمت الزامی هستند.');
+      return;
+    }
+
+    const specs = draft.specs
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    const nextProduct: Product = {
+      id: `custom-${Date.now()}`,
+      name: draft.name.trim(),
+      category: draft.category,
+      image: draft.image.trim(),
+      description: draft.description.trim() || 'محصولی جدید از فروشگاه Stela Design',
+      price: normalizePriceText(draft.price),
+      available: draft.available,
+      featured: draft.featured,
+      specs: specs.length ? specs : ['جنس کیفیت‌دار', 'طراحی مدرن', 'تحویل سریع'],
+      comments: [],
     };
 
-    const products = JSON.parse(localStorage.getItem('stela-products') || '[]');
-    localStorage.setItem(
-      'stela-products',
-      JSON.stringify([...products, product])
-    );
+    const nextProducts = [...products, nextProduct];
+    saveProducts(nextProducts);
+    setProducts(nextProducts);
+    setDraft(emptyDraft);
+    setError('');
 
-    alert('محصول با موفقیت منتشر شد');
-    setImage('');
-    setName('');
-    setPrice('');
-    setSpecs('');
-    setDescription('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const removeProduct = (id: string) => {
+    const nextProducts = products.filter((product) => product.id !== id);
+    saveProducts(nextProducts);
+    removeCommentsForProduct(id);
+    setProducts(nextProducts);
   };
 
   return (
-    <div className="min-h-screen px-6 py-12">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-4xl font-serif text-neutral-900 mb-2">
-          مدیریت محصولات
-        </h1>
-
-        <p className="text-neutral-500 mb-10">
-          افزودن محصول جدید به فروشگاه Stela Design
-        </p>
-
-        <div className="space-y-6">
+    <div className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <label className="block mb-2">عکس محصول</label>
-            <input
-              type="text"
-              value={image}
-              onChange={(e) => setImage(e.target.value)}
-              placeholder="آدرس عکس محصول"
-              className="w-full border border-neutral-300 p-4 rounded-xl"
-            />
+            <p className="mb-2 text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+              dashboard
+            </p>
+            <h1 className="font-serif text-3xl text-neutral-900 sm:text-4xl">
+              پنل مدیریت محصولات
+            </h1>
           </div>
 
-          <div>
-            <label className="block mb-2">نام محصول</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="مثلاً میز مدرن STELA"
-              className="w-full border border-neutral-300 p-4 rounded-xl"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2">دسته‌بندی</label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full border border-neutral-300 p-4 rounded-xl"
-            >
-              <option>میز</option>
-              <option>شلف</option>
-              <option>استند</option>
-              <option>رگال لباس</option>
-              <option>کتابخانه</option>
-              <option>نیمکت</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block mb-2">قیمت</label>
-            <input
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="مثلاً 2500000"
-              className="w-full border border-neutral-300 p-4 rounded-xl"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2">مشخصات محصول</label>
-            <textarea
-              value={specs}
-              onChange={(e) => setSpecs(e.target.value)}
-              placeholder="ابعاد، متریال، رنگ و..."
-              rows={5}
-              className="w-full border border-neutral-300 p-4 rounded-xl"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2">توضیحات محصول</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="توضیحات کامل محصول..."
-              rows={7}
-              className="w-full border border-neutral-300 p-4 rounded-xl"
-            />
-          </div>
-
-          <button
-            onClick={publish}
-            className="w-full py-4 rounded-xl bg-neutral-900 text-white text-lg hover:bg-neutral-700 transition"
-          >
-            انتشار محصول
+          <button className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-medium text-neutral-800 shadow-sm transition hover:border-neutral-900 hover:text-neutral-900">
+            <Sparkles size={16} />
+            نسخه پیش‌نمایش
           </button>
+        </div>
+
+        <div className="mb-8 grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <div className="mb-3 flex items-center justify-between text-neutral-500">
+              <Package size={18} />
+              <span className="text-xs uppercase tracking-[0.2em]">total</span>
+            </div>
+            <p className="text-2xl font-serif text-neutral-900">{products.length}</p>
+            <p className="mt-2 text-sm text-neutral-500">محصول ثبت‌شده</p>
+          </div>
+
+          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <div className="mb-3 flex items-center justify-between text-neutral-500">
+              <Layers3 size={18} />
+              <span className="text-xs uppercase tracking-[0.2em]">categories</span>
+            </div>
+            <p className="text-2xl font-serif text-neutral-900">{CATEGORIES.length}</p>
+            <p className="mt-2 text-sm text-neutral-500">دسته‌بندی فعال</p>
+          </div>
+
+          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <div className="mb-3 flex items-center justify-between text-neutral-500">
+              <BadgeDollarSign size={18} />
+              <span className="text-xs uppercase tracking-[0.2em]">inventory</span>
+            </div>
+            <p className="text-2xl font-serif text-neutral-900">
+              {new Intl.NumberFormat('fa-IR').format(totalValue)}
+            </p>
+            <p className="mt-2 text-sm text-neutral-500">جمع قیمت محصولات</p>
+          </div>
+        </div>
+
+        <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
+          <section className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 text-white">
+                <PlusCircle size={18} />
+              </div>
+              <h2 className="font-serif text-2xl text-neutral-900">افزودن محصول جدید</h2>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <label className="md:col-span-2">
+                <span className="mb-2 block text-sm text-neutral-700">نام محصول</span>
+                <input
+                  value={draft.name}
+                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                  placeholder="مثلاً میز آرتیستی"
+                  className="w-full rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 outline-none transition focus:border-neutral-900 focus:bg-white"
+                />
+              </label>
+
+              <label>
+                <span className="mb-2 block text-sm text-neutral-700">دسته‌بندی</span>
+                <select
+                  value={draft.category}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      category: e.target.value as ProductCategory,
+                    })
+                  }
+                  className="w-full rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 outline-none transition focus:border-neutral-900 focus:bg-white"
+                >
+                  {CATEGORIES.map((category) => (
+                    <option key={category.slug} value={category.slug}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                <span className="mb-2 block text-sm text-neutral-700">قیمت</span>
+                <input
+                  value={draft.price}
+                  onChange={(e) => setDraft({ ...draft, price: e.target.value })}
+                  placeholder="مثلاً 2500000 تومان"
+                  className="w-full rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 outline-none transition focus:border-neutral-900 focus:bg-white"
+                />
+              </label>
+
+              <label className="md:col-span-2">
+                <span className="mb-2 block text-sm text-neutral-700">عکس محصول</span>
+                <div className="flex flex-col gap-3 rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-3 sm:flex-row sm:items-center">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="w-full text-sm text-neutral-600 file:mr-4 file:rounded-full file:border-0 file:bg-neutral-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white"
+                  />
+                  <input
+                    value={draft.image}
+                    onChange={(e) => setDraft({ ...draft, image: e.target.value })}
+                    placeholder="یا لینک عکس وارد کنید"
+                    className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 outline-none transition focus:border-neutral-900"
+                  />
+                </div>
+              </label>
+
+              {draft.image && (
+                <div className="md:col-span-2 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100">
+                  <img
+                    src={draft.image}
+                    alt="پیش‌نمایش محصول"
+                    className="h-56 w-full object-cover"
+                    onError={(event) => {
+                      event.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+
+              <label className="md:col-span-2">
+                <span className="mb-2 block text-sm text-neutral-700">توضیحات</span>
+                <textarea
+                  rows={4}
+                  value={draft.description}
+                  onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                  placeholder="توضیحات محصول، ابعاد، جنس و مزیت‌ها"
+                  className="w-full rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 outline-none transition focus:border-neutral-900 focus:bg-white"
+                />
+              </label>
+
+              <label className="md:col-span-2">
+                <span className="mb-2 block text-sm text-neutral-700">مشخصات</span>
+                <textarea
+                  rows={4}
+                  value={draft.specs}
+                  onChange={(e) => setDraft({ ...draft, specs: e.target.value })}
+                  placeholder={'هر مشخصه را در یک خط جدا بنویسید\nابعاد: 120 × 60\nجنس: چوبی\nرنگ: سفید'}
+                  className="w-full rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 outline-none transition focus:border-neutral-900 focus:bg-white"
+                />
+              </label>
+
+              <label className="flex items-center gap-3 rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
+                <input
+                  type="checkbox"
+                  checked={draft.available}
+                  onChange={(e) => setDraft({ ...draft, available: e.target.checked })}
+                  className="h-4 w-4 rounded border-neutral-400"
+                />
+                محصول موجود است
+              </label>
+
+              <label className="flex items-center gap-3 rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
+                <input
+                  type="checkbox"
+                  checked={draft.featured}
+                  onChange={(e) => setDraft({ ...draft, featured: e.target.checked })}
+                  className="h-4 w-4 rounded border-neutral-400"
+                />
+                featured
+              </label>
+            </div>
+
+            {error && (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <button
+              onClick={addProduct}
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-base font-medium text-white transition hover:bg-neutral-700"
+            >
+              <PlusCircle size={18} />
+              انتشار محصول
+            </button>
+          </section>
+
+          <aside className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-neutral-900">
+                <ImageIcon size={18} />
+              </div>
+              <h2 className="font-serif text-2xl text-neutral-900">محصولات منتشرشده</h2>
+            </div>
+
+            <div className="space-y-4">
+              {products.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-8 text-center text-sm text-neutral-500">
+                  هنوز محصولی اضافه نشده است.
+                </div>
+              ) : (
+                products.map((product) => (
+                  <div
+                    key={product.id}
+                    className="flex gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-3"
+                  >
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="h-20 w-20 rounded-xl object-cover"
+                    />
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="truncate font-medium text-neutral-900">{product.name}</p>
+                          <p className="mt-1 text-xs text-neutral-500">
+                            {CATEGORIES.find((cat) => cat.slug === product.category)?.name || 'دسته نامشخص'}
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={() => removeProduct(product.id)}
+                          className="rounded-full p-2 text-neutral-500 transition hover:bg-white hover:text-red-600"
+                          title="حذف محصول"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+
+                      <div className="mt-3 flex items-center justify-between gap-2">
+                        <span className="text-sm font-medium text-neutral-800">
+                          {formatPrice(product.price)}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-1 text-[10px] ${
+                            product.available
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-neutral-200 text-neutral-600'
+                          }`}
+                        >
+                          {product.available ? 'موجود' : 'نا موجود'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </aside>
         </div>
       </div>
     </div>

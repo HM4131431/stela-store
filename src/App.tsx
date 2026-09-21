@@ -7,9 +7,10 @@ import CartScreen from './CartScreen';
 import ContactScreen from './ContactScreen';
 import AdminProducts from './AdminProducts';
 import FurnitureBackground from './FurnitureBackground';
+import PaymentGatewayScreen from './PaymentGatewayScreen';
 import type { ProductCategory } from './products';
 
-const BASE = '/stela-store';
+const BASE = import.meta.env.PROD ? '' : '/stela-store';
 
 const path = () => {
   if (new URLSearchParams(window.location.search).get('admin') === 'products') return '/admin/products';
@@ -26,7 +27,8 @@ export default function App() {
     setFade(true);
 
     setTimeout(() => {
-      history.pushState({}, '', BASE + p);
+      const target = p.startsWith(BASE) ? p : BASE + p;
+      history.pushState({}, '', target);
       setS(next);
       setFade(false);
     }, 600);
@@ -47,6 +49,8 @@ export default function App() {
         setS('products');
       } else if (p === '/cart') {
         setS('cart');
+      } else if (p === '/payment') {
+        setS('payment');
       } else if (p === '/admin/products') {
         setS('admin');
       } else if (p === '/contact') {
@@ -136,6 +140,10 @@ export default function App() {
 
         {s === 'contact' && (
           <ContactScreen onBack={() => nav('menu')} />
+        )}
+
+        {s === 'payment' && (
+          <PaymentGatewayScreen onBack={() => nav('menu')} />
         )}
       </main>
     </>
